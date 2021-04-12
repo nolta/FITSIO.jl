@@ -375,6 +375,8 @@ getkey(hdr::FITSHeader, key::String, def) =
     (haskey(hdr, key) ? getindex(hdr, key) : def)
 
 getindex(hdr::FITSHeader, key::String) = hdr.values[hdr.map[key]]
+getindex(hdr::FITSHeader, key::String, ::typeof(:)) = (hdr.values[hdr.map[key]], hdr.comments[hdr.map[key]])
+
 getindex(hdr::FITSHeader, i::Integer) = hdr.values[i]
 
 function setindex!(hdr::FITSHeader, value::Any, key::String)
@@ -385,6 +387,20 @@ function setindex!(hdr::FITSHeader, value::Any, key::String)
         push!(hdr.keys, key)
         push!(hdr.values, value)
         push!(hdr.comments, "")
+        hdr.map[key] = length(hdr.keys)
+    end
+end
+
+function setindex!(hdr::FITSHeader, valcom::Tuple{Any,Any}, key::String, ::typeof(:))
+    value, comment = valcom
+    fits_assert_isascii(key)
+    if in(key, hdr.keys)
+        hdr.values[hdr.map[key]] = value
+        hdr.comments[hdr.map[key]] = comment
+    else
+        push!(hdr.keys, key)
+        push!(hdr.values, value)
+        push!(hdr.comments, comment)
         hdr.map[key] = length(hdr.keys)
     end
 end
